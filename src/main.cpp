@@ -22,6 +22,8 @@ constexpr float HARD_LIMIT_PERCENT = 1.f / 5;
 
 constexpr float SOFT_CAMERA_ALPHA = 0.1f;
 
+float SAMPLE = 0.0f;
+
 struct Player {
     Player()
         : position(WINDOW_WIDTH / 2, WINDOW_HEIGHT - FLOOR_HEIGHT),
@@ -88,6 +90,7 @@ int main() {
     rightHardLine.setPosition({WINDOW_WIDTH * (1.f - HARD_LIMIT_PERCENT), 0});
 
     Player player;
+    SAMPLE = player.position.x;
 
     sf::View worldView = window.getView();
     sf::View guiView = window.getView();
@@ -137,8 +140,16 @@ int main() {
         // player center must NEVER pass the red lines.
         //
         // Use SOFT_LIMIT_PERCENT and HARD_LIMIT_PERCENT to parameterize the green and red
-        // line positions.
-        camera.setCameraCenter({player.position.x, WINDOW_HEIGHT * 0.5f});
+        // line positions.               
+        float player_position_world = camera.windowToWorld(player.position).x;  
+        if (player_position_world < camera.windowToWorld(leftHardLine.getPosition()).x || player_position_world > camera.windowToWorld(rightHardLine.getPosition()).x) {
+            camera.setCameraCenter({player.position.x, WINDOW_HEIGHT * 0.5f});
+        }
+        else if (player_position_world < camera.windowToWorld(leftSoftLine.getPosition()).x || player_position_world > camera.windowToWorld(rightSoftLine.getPosition()).x) {
+            SAMPLE = SAMPLE + SOFT_CAMERA_ALPHA * (player.position.x - SAMPLE);
+            camera.setCameraCenter({SAMPLE, WINDOW_HEIGHT * 0.5f});
+        }
+
 
         worldView.setCenter(camera.getCameraCenter());
         window.clear(sf::Color::Black);
